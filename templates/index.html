@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор Эрланга — Модели B, C, A</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --b-color: #4361ee; --c-color: #059669; --a-color: #dc2626;
+            --bg: #f8fafc; --card-bg: #ffffff; --text: #1e293b;
+            --text-light: #64748b; --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; font-family: 'Segoe UI', 'Arial', sans-serif; padding: 20px 0;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+        .card {
+            background: var(--card-bg); border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 20px 25px; border-bottom: none;
+        }
+        .header-title {
+            color: white; text-align: center; font-size: 2rem; font-weight: 800;
+            margin: 0 0 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header-subtitle { color: #94a3b8; text-align: center; font-size: 1rem; margin: 0; }
+        .nav-tabs { border-bottom: none; display: flex; flex-wrap: wrap; gap: 4px; }
+        .nav-tabs .nav-link {
+            border: none; border-radius: 10px 10px 0 0;
+            padding: 12px 18px; font-weight: 600; font-size: 0.9rem;
+            color: #cbd5e1; background: transparent; transition: all 0.2s;
+        }
+        .nav-tabs .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-tabs .nav-link.active { background: white; color: var(--text); font-weight: 700; }
+        .sub-nav .nav-link {
+            padding: 8px 16px; font-size: 0.85rem; border-radius: 8px;
+            margin-right: 5px; color: var(--text-light); background: var(--bg);
+        }
+        .sub-nav .nav-link.active { background: var(--b-color); color: white; }
+        .sub-nav .nav-link:hover:not(.active) { background: #e2e8f0; }
+        .model-badge {
+            display: inline-block; padding: 4px 14px; border-radius: 20px;
+            font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .model-badge.b { background: #dbeafe; color: #1e40af; }
+        .model-badge.c { background: #d1fae5; color: #065f46; }
+        .model-badge.a { background: #fee2e2; color: #991b1b; }
+        .model-info {
+            background: #f1f5f9; border-radius: 10px; padding: 15px 18px;
+            margin-bottom: 20px; border-left: 4px solid #6366f1;
+        }
+        .model-info p { margin: 8px 0 0 0; color: var(--text); font-size: 0.9rem; line-height: 1.5; }
+        .norms-box {
+            background: #f0f9ff; border-radius: 8px; padding: 10px 15px;
+            font-size: 0.85rem; margin-top: 10px; border: 1px solid #bae6fd;
+        }
+        .norm-item {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            margin: 2px 4px; font-weight: 600; font-size: 0.75rem;
+        }
+        .norm-excellent { background: #bbf7d0; color: #14532d; }
+        .norm-good { background: #dbeafe; color: #1e40af; }
+        .norm-acceptable { background: #fde68a; color: #78350f; }
+        .norm-poor { background: #fecaca; color: #7f1d1d; }
+        .norm-bad { background: #fca5a5; color: #991b1b; }
+        .norm-warning { background: #fef3c7; color: #92400e; }
+        .form-label {
+            font-weight: 700; color: var(--text); font-size: 0.9rem;
+            margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
+        }
+        .form-control {
+            border: 2px solid var(--border); border-radius: 10px;
+            padding: 10px 14px; font-size: 1rem; transition: all 0.2s;
+            background: white; color: var(--text);
+        }
+        .form-control:focus {
+            border-color: var(--b-color); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15); outline: none;
+        }
+        .range-hint { font-size: 0.8rem; color: var(--text-light); margin-top: 4px; }
+        .btn-primary {
+            background: linear-gradient(135deg, #4361ee, #3b82f6);
+            border: none; border-radius: 10px; padding: 12px 28px;
+            font-weight: 600; font-size: 0.95rem; color: white;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4); }
+        .result-box {
+            background: #f8fafc; border-radius: 12px; padding: 20px;
+            margin-top: 20px; border-left: 4px solid #22c55e; display: none;
+        }
+        .result-box h6 { color: var(--text); font-weight: 700; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .stat-card {
+            background: white; border-radius: 10px; padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;
+        }
+        .stat-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-light); font-weight: 600; margin-bottom: 6px;
+        }
+        .stat-value { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+        .stat-norm {
+            font-size: 0.75rem; padding: 3px 8px; border-radius: 4px;
+            display: inline-block; margin-top: 6px; font-weight: 600;
+        }
+        .chart-container {
+            background: white; border-radius: 12px; padding: 15px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            min-height: 400px; height: 450px; margin-top: 20px; position: relative;
+        }
+        .chart-container canvas { width: 100% !important; height: 100% !important; }
+        .graph-controls {
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: end;
+            background: #f8fafc; padding: 15px; border-radius: 10px;
+        }
+        .graph-controls .form-control { width: auto; min-width: 120px; }
+        .table-responsive { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 20px; }
+        .table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; }
+        .table thead { background: linear-gradient(135deg, #1e293b, #334155); color: white; }
+        .table thead th { padding: 12px 10px; font-weight: 700; text-align: center; white-space: nowrap; }
+        .table tbody td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+        .gos-excellent { background: #bbf7d0 !important; color: #14532d !important; font-weight: 600; }
+        .gos-acceptable { background: #fde68a !important; color: #78350f !important; font-weight: 600; }
+        .gos-poor { background: #fecaca !important; color: #7f1d1d !important; font-weight: 600; }
+        @media (max-width: 768px) {
+            .header-title { font-size: 1.5rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .chart-container { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="header-title">📊 Калькулятор Эрланга</h1>
+            <p class="header-subtitle">Модели B, C и A • Прямые и обратные задачи • Расширенная визуализация</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs" id="mainTabs">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#model-b">📡 Модель B</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#model-c">📞 Модель C</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#model-a">🔄 Модель A</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#graphs">📈 Графики</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#table">📋 Таблица</button></li>
+                </ul>
+            </div>
+            <div class="card-body" style="padding: 25px;">
+                <div class="tab-content">
+
+                    <!-- ========== МОДЕЛЬ B ========== -->
+                    <div class="tab-pane fade show active" id="model-b">
+                        <div class="model-info">
+                            <span class="model-badge b">Модель Эрланга B</span>
+                            <p>Классическая модель <strong>с потерями</strong> (без очереди, нет буфера).<br>
+                            <strong>Применение:</strong> не только телефония — любые системы массового обслуживания с отказами.</p>
+                        </div>
+                        <div class="norms-box">
+                            <strong>📋 Нормативы вероятности блокировки:</strong><br>
+                            <span class="norm-item norm-excellent">≤1% — Отлично (городские сети)</span>
+                            <span class="norm-item norm-good">≤2% — Хорошо (ведомственные сети)</span>
+                            <span class="norm-item norm-acceptable">≤5% — Приемлемо (офисные АТС)</span>
+                            <span class="norm-item norm-poor">≤10% — Посредственно (резервные каналы)</span>
+                            <span class="norm-item norm-bad">>10% — Плохо</span>
+                        </div>
+                        <div class="norms-box mt-2">
+                            <strong>📋 Нормативы использования каналов:</strong>
+                            <span class="norm-item norm-excellent">60-85% — Оптимально</span>
+                            <span class="norm-item norm-warning">&lt;60% — Недогрузка</span>
+                            <span class="norm-item norm-poor">&gt;85% — Перегрузка</span>
+                        </div>
+
+                        <ul class="nav nav-pills sub-nav mb-3 mt-3">
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#b-direct">📐 Прямая задача</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#b-inverse-n">🔍 Найти N</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#b-inverse-a">🔍 Найти A</button></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="b-direct">
+                                <h5>Прямая задача: P_B = f(N, A)</h5>
+                                <p class="text-muted">Найти вероятность блокировки по известным числу каналов и нагрузке.</p>
+                                <form id="formB_Direct">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Нагрузка A (Эрл) <small class="text-muted">A = λ × T</small></label>
+                                            <input type="number" class="form-control" id="b_direct_traffic" value="50" step="0.1" min="0.1" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Число каналов N</label>
+                                            <input type="number" class="form-control" id="b_direct_servers" value="60" min="1" required>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                                </form>
+                                <div class="result-box" id="resultB_Direct">
+                                    <h6>Результаты</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-card">
+                                            <div class="stat-label">Вероятность блокировки P_B</div>
+                                            <div class="stat-value" id="b_direct_gos">—</div>
+                                            <div id="b_direct_gos_norm"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Обслуженная нагрузка <small>A × (1 - P_B)</small></div>
+                                            <div class="stat-value" id="b_direct_carried">—</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Потерянная нагрузка <small>A × P_B</small></div>
+                                            <div class="stat-value" id="b_direct_blocked">—</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Использование каналов</div>
+                                            <div class="stat-value" id="b_direct_util">—</div>
+                                            <div id="b_direct_util_norm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="b-inverse-n">
+                                <h5>Обратная задача: N = f(A, P_B)</h5>
+                                <p class="text-muted">Сколько каналов нужно для заданного качества?</p>
+                                <form id="formB_InverseN">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Нагрузка A (Эрл)</label>
+                                            <input type="number" class="form-control" id="b_inv_n_traffic" value="50" step="0.1" min="0.1" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Допустимая P_B (%)</label>
+                                            <input type="number" class="form-control" id="b_inv_n_gos" value="1" step="0.5" min="1" max="50" required>
+                                            <div class="range-hint">Диапазон: 1% – 50%</div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Найти</button>
+                                </form>
+                                <div class="result-box" id="resultB_InverseN">
+                                    <h6>Результаты</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-card" style="grid-column: 1/-1; background: linear-gradient(135deg, #dbeafe, #ede9fe);">
+                                            <div class="stat-label">Необходимо каналов N</div>
+                                            <div class="stat-value" id="b_inv_n_servers" style="font-size: 2.5rem;">—</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Фактическая P_B</div>
+                                            <div class="stat-value" id="b_inv_n_actual_gos">—</div>
+                                            <div id="b_inv_n_gos_norm"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Использование каналов</div>
+                                            <div class="stat-value" id="b_inv_n_util">—</div>
+                                            <div id="b_inv_n_util_norm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="b-inverse-a">
+                                <h5>Обратная задача: A = f(N, P_B)</h5>
+                                <p class="text-muted">Какую нагрузку выдержат имеющиеся каналы?</p>
+                                <form id="formB_InverseA">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Число каналов N</label>
+                                            <input type="number" class="form-control" id="b_inv_a_servers" value="60" min="1" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Допустимая P_B (%)</label>
+                                            <input type="number" class="form-control" id="b_inv_a_gos" value="1" step="0.5" min="1" max="50" required>
+                                            <div class="range-hint">Диапазон: 1% – 50%</div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Найти</button>
+                                </form>
+                                <div class="result-box" id="resultB_InverseA">
+                                    <h6>Результаты</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-card" style="grid-column: 1/-1; background: linear-gradient(135deg, #dbeafe, #ede9fe);">
+                                            <div class="stat-label">Допустимая нагрузка A (Эрл)</div>
+                                            <div class="stat-value" id="b_inv_a_traffic" style="font-size: 2.5rem;">—</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Фактическая P_B</div>
+                                            <div class="stat-value" id="b_inv_a_actual_gos">—</div>
+                                            <div id="b_inv_a_gos_norm"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Использование каналов</div>
+                                            <div class="stat-value" id="b_inv_a_util">—</div>
+                                            <div id="b_inv_a_util_norm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== МОДЕЛЬ C ========== -->
+                    <div class="tab-pane fade" id="model-c">
+                        <div class="model-info">
+                            <span class="model-badge c">Модель Эрланга C</span>
+                            <p>Модель <strong>с очередью (буфером)</strong> — заявки ждут, если все операторы заняты.<br>
+                            <strong>Отличие от B:</strong> есть буфер (очередь), вызовы не теряются, а ожидают.</p>
+                        </div>
+                        <div class="norms-box">
+                            <strong>📋 Нормативы Service Level (доля отвеченных за целевое время):</strong><br>
+                            <span class="norm-item norm-excellent">≥90% — Премиум</span>
+                            <span class="norm-item norm-good">≥80% — Стандарт (80/20)</span>
+                            <span class="norm-item norm-acceptable">≥70% — Приемлемо</span>
+                            <span class="norm-item norm-poor">&lt;70% — Требуется增加 операторов</span>
+                        </div>
+                        <div class="norms-box mt-2">
+                            <strong>📋 Нормативы времени ожидания:</strong>
+                            <span class="norm-item norm-excellent">&lt;10 сек — Отлично</span>
+                            <span class="norm-item norm-good">&lt;20 сек — Хорошо</span>
+                            <span class="norm-item norm-acceptable">&lt;60 сек — Приемлемо</span>
+                            <span class="norm-item norm-poor">&gt;60 сек — Плохо</span>
+                        </div>
+
+                        <ul class="nav nav-pills sub-nav mb-3 mt-3">
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#c-metrics">📐 Прямая задача</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#c-agents">🔍 Найти операторов</button></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="c-metrics">
+                                <h5>Расчёт метрик колл-центра</h5>
+                                <form id="formC_Direct">
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3"><label class="form-label">A (Эрл)</label><input type="number" class="form-control" id="c_direct_traffic" value="50" step="0.1" min="0.1" required></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">N операторов</label><input type="number" class="form-control" id="c_direct_servers" value="55" min="1" required></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">T обсл (сек)</label><input type="number" class="form-control" id="c_direct_duration" value="180" min="1" required></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Целевое время (сек)</label><input type="number" class="form-control" id="c_direct_target" value="20" min="1" required></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                                </form>
+                                <div class="result-box" id="resultC_Direct">
+                                    <h6>Результаты</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-card"><div class="stat-label">Вероятность ожидания P_C</div><div class="stat-value" id="c_direct_ec">—</div></div>
+                                        <div class="stat-card"><div class="stat-label">Среднее время ожидания</div><div class="stat-value" id="c_direct_avg_wait">—</div><div id="c_direct_wait_norm"></div></div>
+                                        <div class="stat-card"><div class="stat-label">Service Level</div><div class="stat-value" id="c_direct_sl">—</div><div id="c_direct_sl_norm"></div></div>
+                                        <div class="stat-card"><div class="stat-label">Длина очереди L_q</div><div class="stat-value" id="c_direct_queue">—</div></div>
+                                        <div class="stat-card"><div class="stat-label">Использование операторов</div><div class="stat-value" id="c_direct_util">—</div><div id="c_direct_util_norm"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="c-agents">
+                                <h5>Найти число операторов</h5>
+                                <form id="formC_Inverse">
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3"><label class="form-label">A (Эрл)</label><input type="number" class="form-control" id="c_inv_traffic" value="50" step="0.1" min="0.1" required></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Целевой SL (%)</label><input type="number" class="form-control" id="c_inv_sl" value="80" min="50" max="99" required><div class="range-hint">50% – 99%</div></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">T обсл (сек)</label><input type="number" class="form-control" id="c_inv_duration" value="180" min="1" required></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Целевое время (сек)</label><input type="number" class="form-control" id="c_inv_target" value="20" min="1" required></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Найти</button>
+                                </form>
+                                <div class="result-box" id="resultC_Inverse">
+                                    <h6>Результаты</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-card" style="grid-column: 1/-1; background: linear-gradient(135deg, #d1fae5, #e6f7ed);">
+                                            <div class="stat-label">Необходимо операторов N</div>
+                                            <div class="stat-value" id="c_inv_servers" style="font-size: 2.5rem;">—</div>
+                                        </div>
+                                        <div class="stat-card"><div class="stat-label">Фактический SL</div><div class="stat-value" id="c_inv_sl_actual">—</div><div id="c_inv_sl_norm"></div></div>
+                                        <div class="stat-card"><div class="stat-label">Среднее ожидание</div><div class="stat-value" id="c_inv_wait">—</div><div id="c_inv_wait_norm"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== МОДЕЛЬ A ========== -->
+                    <div class="tab-pane fade" id="model-a">
+                        <div class="model-info">
+                            <span class="model-badge a">Модель Эрланга A</span>
+                            <p>Расширенная модель: <strong>нетерпение абонентов</strong> (бросают трубку) + <strong>повторные вызовы</strong> (перезванивают).<br>
+                            <strong>Отличие:</strong> учитывает реальное поведение людей.</p>
+                        </div>
+                        <h5>Расчёт с учётом поведения абонентов</h5>
+                        <form id="formA_Direct">
+                            <div class="row">
+                                <div class="col-md-4 mb-3"><label class="form-label">A (Эрл)</label><input type="number" class="form-control" id="a_direct_traffic" value="50" step="0.1" min="0.1" required></div>
+                                <div class="col-md-4 mb-3"><label class="form-label">N каналов</label><input type="number" class="form-control" id="a_direct_servers" value="55" min="1" required></div>
+                                <div class="col-md-4 mb-3"><label class="form-label">Повторные вызовы (%)</label><input type="number" class="form-control" id="a_direct_recall" value="10" min="0" max="99" required></div>
+                                <div class="col-md-4 mb-3"><label class="form-label">Терпение (множитель)</label><input type="number" class="form-control" id="a_direct_patience" value="5" step="0.5" min="0.1" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Рассчитать</button>
+                        </form>
+                        <div class="result-box" id="resultA_Direct">
+                            <h6>Результаты</h6>
+                            <div class="stats-grid">
+                                <div class="stat-card"><div class="stat-label">P_B (модель A)</div><div class="stat-value" id="a_direct_gos_a">—</div><div id="a_direct_gos_norm"></div></div>
+                                <div class="stat-card"><div class="stat-label">P_B (модель B)</div><div class="stat-value" id="a_direct_gos_b">—</div></div>
+                                <div class="stat-card"><div class="stat-label">Разница A − B</div><div class="stat-value" id="a_direct_diff">—</div></div>
+                                <div class="stat-card"><div class="stat-label">Эффективная нагрузка</div><div class="stat-value" id="a_direct_effective">—</div></div>
+                                <div class="stat-card"><div class="stat-label">Брошенные вызовы</div><div class="stat-value" id="a_direct_abandoned">—</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== ГРАФИКИ ========== -->
+                    <div class="tab-pane fade" id="graphs">
+                        <h5>📈 Визуализация (5 графиков)</h5>
+                        <ul class="nav nav-pills sub-nav mb-3" id="graphSubTabs">
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#graph1">P_B vs A</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#graph2">P_B vs N</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#graph3">N vs A</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#graph4">SL vs A</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#graph5">Сравнение</button></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="graph1">
+                                <div class="graph-controls">
+                                    <div><label class="form-label" style="margin-bottom:2px;">Модель</label><select class="form-control" id="g1_model"><option value="B">Модель B</option><option value="C">Модель C</option><option value="A">Модель A</option><option value="ALL">Все</option></select></div>
+                                    <div><label class="form-label" style="margin-bottom:2px;">N</label><input type="number" class="form-control" id="g1_servers" value="50" min="1" required></div>
+                                    <button class="btn btn-primary" id="btn_g1">Построить</button>
+                                </div>
+                                <div class="chart-container"><canvas id="chart_g1"></canvas></div>
+                            </div>
+                            <div class="tab-pane fade" id="graph2">
+                                <div class="graph-controls">
+                                    <div><label class="form-label" style="margin-bottom:2px;">Модель</label><select class="form-control" id="g2_model"><option value="B">Модель B</option><option value="C">Модель C</option><option value="A">Модель A</option><option value="ALL">Все</option></select></div>
+                                    <div><label class="form-label" style="margin-bottom:2px;">A (Эрл)</label><input type="number" class="form-control" id="g2_traffic" value="50" step="0.1" min="0.1" required></div>
+                                    <button class="btn btn-primary" id="btn_g2">Построить</button>
+                                </div>
+                                <div class="chart-container"><canvas id="chart_g2"></canvas></div>
+                            </div>
+                            <div class="tab-pane fade" id="graph3">
+                                <div class="graph-controls">
+                                    <div><label class="form-label" style="margin-bottom:2px;">Модель</label><select class="form-control" id="g3_model"><option value="B">Модель B</option><option value="C">Модель C</option></select></div>
+                                    <button class="btn btn-primary" id="btn_g3">Построить</button>
+                                </div>
+                                <div class="chart-container"><canvas id="chart_g3"></canvas></div>
+                            </div>
+                            <div class="tab-pane fade" id="graph4">
+                                <div class="graph-controls">
+                                    <div><label class="form-label" style="margin-bottom:2px;">N</label><input type="number" class="form-control" id="g4_servers" value="50" min="1" required></div>
+                                    <div><label class="form-label" style="margin-bottom:2px;">T (сек)</label><input type="number" class="form-control" id="g4_duration" value="180" min="1" required></div>
+                                    <button class="btn btn-primary" id="btn_g4">Построить</button>
+                                </div>
+                                <div class="chart-container"><canvas id="chart_g4"></canvas></div>
+                            </div>
+                            <div class="tab-pane fade" id="graph5">
+                                <div class="graph-controls">
+                                    <div><label class="form-label" style="margin-bottom:2px;">N</label><input type="number" class="form-control" id="g5_servers" value="50" min="1" required></div>
+                                    <button class="btn btn-primary" id="btn_g5">Построить</button>
+                                </div>
+                                <div class="chart-container"><canvas id="chart_g5"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== ТАБЛИЦА ========== -->
+                    <div class="tab-pane fade" id="table">
+                        <h5>📋 Таблица Эрланга</h5>
+                        <form id="tableForm">
+                            <div class="row">
+                                <div class="col-md-3 mb-3"><label class="form-label">Модель</label><select class="form-control" id="tableModel"><option value="B">Модель B</option><option value="C">Модель C</option><option value="A">Модель A</option></select></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">Макс. A (Эрл)</label><input type="number" class="form-control" id="tableMaxTraffic" value="20" min="1" required></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">Шаг</label><input type="number" class="form-control" id="tableStep" value="2" min="0.5" step="0.5" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Создать</button>
+                        </form>
+                        <div id="tableContainer" class="table-responsive" style="display: none;">
+                            <table class="table table-bordered table-hover" id="erlangTable">
+                                <thead id="tableHeader"></thead>
+                                <tbody id="tableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function formatNumber(num, decimals = 4) {
+            if (!isFinite(num)) return '∞';
+            if (isNaN(num)) return '—';
+            return Number(num).toFixed(decimals);
+        }
+        function formatPercent(num, decimals = 2) {
+            return formatNumber(num * 100, decimals) + '%';
+        }
+        function showResult(id) { document.getElementById(id).style.display = 'block'; }
+
+        function renderNorm(elementId, norm) {
+            if (!norm) return;
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const cls = 'norm-' + (norm.class || '');
+            el.innerHTML = `<span class="stat-norm ${cls}">${norm.label}</span><br><small class="text-muted">${norm.description || ''}</small>`;
+        }
+
+        // ========== ГРАФИКИ ==========
+        const charts = {};
+        function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+
+        function makeLineChart(canvasId, labels, datasets, title, xLabel, yLabel, yMax = 1, yCallback = null) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line', data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: title, font: { size: 14, weight: 'bold' }, color: '#1e293b' },
+                        legend: { labels: { color: '#1e293b', usePointStyle: true, padding: 15 } },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (yCallback ? yCallback(ctx.parsed.y) : (ctx.parsed.y * 100).toFixed(2) + '%') } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: xLabel, color: '#1e293b' }, ticks: { color: '#1e293b' } },
+                        y: { beginAtZero: true, max: yMax, title: { display: true, text: yLabel, color: '#1e293b' }, ticks: { color: '#1e293b', callback: yCallback || (v => (v * 100).toFixed(0) + '%') } }
+                    }
+                }
+            });
+        }
+
+        async function loadGraph1() {
+            const servers = parseInt(document.getElementById('g1_servers').value);
+            const model = document.getElementById('g1_model').value;
+            try {
+                const r = await fetch('/api/graph/gos_vs_traffic', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({servers, model}) });
+                const d = await r.json();
+                destroyChart('g1');
+                charts['g1'] = makeLineChart('chart_g1', d.traffic.map(t => t.toFixed(1)), d.datasets.map(ds => ({...ds, pointRadius:0, pointHoverRadius:5})), `Вероятность блокировки vs Нагрузка (N=${servers})`, 'Нагрузка (Эрл)', 'Вероятность');
+                charts['g1'].resize();
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('btn_g1').addEventListener('click', loadGraph1);
+
+        async function loadGraph2() {
+            const traffic = parseFloat(document.getElementById('g2_traffic').value);
+            const model = document.getElementById('g2_model').value;
+            try {
+                const r = await fetch('/api/graph/gos_vs_servers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({traffic, model}) });
+                const d = await r.json();
+                destroyChart('g2');
+                charts['g2'] = makeLineChart('chart_g2', d.servers.map(s => s.toString()), d.datasets.map(ds => ({...ds, pointRadius:0, pointHoverRadius:5})), `Вероятность блокировки vs Число каналов (A=${traffic})`, 'Число каналов N', 'Вероятность');
+                charts['g2'].resize();
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('btn_g2').addEventListener('click', loadGraph2);
+
+        async function loadGraph3() {
+            const model = document.getElementById('g3_model').value;
+            try {
+                const r = await fetch('/api/graph/servers_vs_traffic', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({model}) });
+                const d = await r.json();
+                destroyChart('g3');
+                const ctx = document.getElementById('chart_g3').getContext('2d');
+                charts['g3'] = new Chart(ctx, {
+                    type: 'line', data: { labels: d.traffic.map(t => t.toString()), datasets: d.datasets.map(ds => ({...ds, pointRadius:0})) },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Необходимое число каналов', font: {size:14,weight:'bold'}, color:'#1e293b' }, legend: { labels: { color:'#1e293b' } } },
+                        scales: { x: { title: { display:true, text:'Нагрузка (Эрл)', color:'#1e293b' } }, y: { title: { display:true, text:'Число каналов N', color:'#1e293b' } } }
+                    }
+                });
+                charts['g3'].resize();
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('btn_g3').addEventListener('click', loadGraph3);
+
+        async function loadGraph4() {
+            const servers = parseInt(document.getElementById('g4_servers').value);
+            const avg_duration = parseFloat(document.getElementById('g4_duration').value);
+            try {
+                const r = await fetch('/api/graph/sl_vs_traffic', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({servers, avg_duration}) });
+                const d = await r.json();
+                destroyChart('g4');
+                charts['g4'] = makeLineChart('chart_g4', d.traffic.map(t => t.toFixed(1)), d.datasets.map(ds => ({...ds, pointRadius:0})), `Service Level vs Нагрузка (N=${servers})`, 'Нагрузка (Эрл)', 'Service Level');
+                charts['g4'].resize();
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('btn_g4').addEventListener('click', loadGraph4);
+
+        async function loadGraph5() {
+            const servers = parseInt(document.getElementById('g5_servers').value);
+            try {
+                const r = await fetch('/api/graph/comparison', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({servers}) });
+                const d = await r.json();
+                destroyChart('g5');
+                const ctx = document.getElementById('chart_g5').getContext('2d');
+                charts['g5'] = new Chart(ctx, {
+                    type: 'line', data: { labels: d.traffic.map(t => t.toFixed(1)), datasets: d.datasets.map(ds => ({...ds, pointRadius:0})) },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { title: { display:true, text:`Сравнение метрик (N=${servers})`, font:{size:14,weight:'bold'}, color:'#1e293b' }, legend: { labels: { color:'#1e293b' } } },
+                        scales: {
+                            x: { title: { display:true, text:'Нагрузка (Эрл)', color:'#1e293b' } },
+                            y: { position:'left', title: { display:true, text:'Вероятность (%)', color:'#1e293b' }, min:0, max:100, ticks: { callback: v => v.toFixed(0)+'%' } },
+                            y1: { position:'right', title: { display:true, text:'Использование (%)', color:'#f59e0b' }, min:0, max:100, ticks: { callback: v => v.toFixed(0)+'%' }, grid: { drawOnChartArea:false } }
+                        }
+                    }
+                });
+                charts['g5'].resize();
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('btn_g5').addEventListener('click', loadGraph5);
+
+        function resizeAll() { Object.values(charts).forEach(c => { if (c && c.resize) c.resize(); }); }
+        document.querySelector('button[data-bs-target="#graphs"]').addEventListener('shown.bs.tab', () => setTimeout(resizeAll, 100));
+        document.querySelectorAll('#graphSubTabs button').forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function() {
+                setTimeout(resizeAll, 150);
+                const t = this.getAttribute('data-bs-target');
+                if (t === '#graph1') loadGraph1();
+                else if (t === '#graph2') loadGraph2();
+                else if (t === '#graph3') loadGraph3();
+                else if (t === '#graph4') loadGraph4();
+                else if (t === '#graph5') loadGraph5();
+            });
+        });
+
+        // ========== ФОРМЫ ==========
+        document.getElementById('formB_Direct').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const r = await fetch('/api/model_b/direct', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({traffic:parseFloat(document.getElementById('b_direct_traffic').value), servers:parseInt(document.getElementById('b_direct_servers').value)}) });
+            const d = await r.json();
+            if (!d.success) { alert(d.error); return; }
+            document.getElementById('b_direct_gos').textContent = formatPercent(d.gos) + ' (' + formatNumber(d.gos, 6) + ')';
+            document.getElementById('b_direct_carried').textContent = formatNumber(d.carried_traffic, 2) + ' Эрл';
+            document.getElementById('b_direct_blocked').textContent = formatNumber(d.blocked_traffic, 2) + ' Эрл';
+            document.getElementById('b_direct_util').textContent = formatNumber(d.utilization, 1) + '%';
+            renderNorm('b_direct_gos_norm', d.gos_norm);
+            renderNorm('b_direct_util_norm', d.utilization_norm);
+            showResult('resultB_Direct');
+        });
+
+        document.getElementById('formB_InverseN').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const r = await fetch('/api/model_b/inverse_servers', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({traffic:parseFloat(document.getElementById('b_inv_n_traffic').value), target_gos:parseFloat(document.getElementById('b_inv_n_gos').value)/100}) });
+            const d = await r.json();
+            if (!d.success) { alert(d.error); return; }
+            document.getElementById('b_inv_n_servers').textContent = d.servers;
+            document.getElementById('b_inv_n_actual_gos').textContent = formatPercent(d.actual_gos);
+            document.getElementById('b_inv_n_util').textContent = formatNumber(d.utilization, 1) + '%';
+            renderNorm('b_inv_n_gos_norm', d.gos_norm);
+            renderNorm('b_inv_n_util_norm', d.utilization_norm);
+            showResult('resultB_InverseN');
+        });
+
+        document.getElementById('formB_InverseA').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const r = await fetch('/api/model_b/inverse_traffic', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({servers:parseInt(document.getElementById('b_inv_a_servers').value), target_gos:parseFloat(document.getElementById('b_inv_a_gos').value)/100}) });
+            const d = await r.json();
+            if (!d.success) { alert(d.error); return; }
+            document.getElementById('b_inv_a_traffic').textContent = formatNumber(d.traffic, 2) + ' Эрл';
+            document.getElementById('b_inv_a_actual_gos').textContent = formatPercent(d.actual_gos);
+            document.getElementById('b_inv_a_util').textContent = formatNumber(d.utilization, 1) + '%';
+            renderNorm('b_inv_a_gos_norm', d.gos_norm);
+            renderNorm('b_inv_a_util_norm', d.utilization_norm);
+            showResult('resultB_InverseA');
+        });
+
+        document.getElementById('formC_Direct').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = { traffic:parseFloat(document.getElementById('c_direct_traffic').value), servers:parseInt(document.getElementById('c_direct_servers').value), avg_duration:parseFloat(document.getElementById('c_direct_duration').value), target_time:parseFloat(document.getElementById('c_direct_target').value) };
+            const r = await fetch('/api/model_c/direct', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            const d = await r.json();
+            document.getElementById('c_direct_ec').textContent = formatPercent(d.ec);
+            document.getElementById('c_direct_avg_wait').textContent = formatNumber(d.avg_wait, 1) + ' сек';
+            document.getElementById('c_direct_sl').textContent = formatPercent(d.service_level);
+            document.getElementById('c_direct_queue').textContent = formatNumber(d.queue_length, 2);
+            document.getElementById('c_direct_util').textContent = formatNumber(d.utilization, 1) + '%';
+            renderNorm('c_direct_sl_norm', d.sl_norm);
+            renderNorm('c_direct_wait_norm', d.wait_norm);
+            renderNorm('c_direct_util_norm', d.util_norm);
+            showResult('resultC_Direct');
+        });
+
+        document.getElementById('formC_Inverse').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = { traffic:parseFloat(document.getElementById('c_inv_traffic').value), target_sl:parseFloat(document.getElementById('c_inv_sl').value)/100, avg_duration:parseFloat(document.getElementById('c_inv_duration').value), target_time:parseFloat(document.getElementById('c_inv_target').value) };
+            const r = await fetch('/api/model_c/inverse', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            const d = await r.json();
+            document.getElementById('c_inv_servers').textContent = d.servers;
+            document.getElementById('c_inv_sl_actual').textContent = formatPercent(d.service_level);
+            document.getElementById('c_inv_wait').textContent = formatNumber(d.avg_wait, 1) + ' сек';
+            renderNorm('c_inv_sl_norm', d.sl_norm);
+            renderNorm('c_inv_wait_norm', d.wait_norm);
+            showResult('resultC_Inverse');
+        });
+
+        document.getElementById('formA_Direct').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = { traffic:parseFloat(document.getElementById('a_direct_traffic').value), servers:parseInt(document.getElementById('a_direct_servers').value), recall:parseFloat(document.getElementById('a_direct_recall').value)/100, patience:parseFloat(document.getElementById('a_direct_patience').value) };
+            const r = await fetch('/api/model_a/direct', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            const d = await r.json();
+            document.getElementById('a_direct_gos_a').textContent = formatPercent(d.gos_a);
+            document.getElementById('a_direct_gos_b').textContent = formatPercent(d.gos_b);
+            document.getElementById('a_direct_diff').textContent = formatNumber(d.difference_percent, 2) + ' п.п.';
+            document.getElementById('a_direct_effective').textContent = formatNumber(d.effective_traffic, 2) + ' Эрл';
+            document.getElementById('a_direct_abandoned').textContent = formatPercent(d.abandoned_calls);
+            renderNorm('a_direct_gos_norm', d.gos_norm);
+            showResult('resultA_Direct');
+        });
+
+        document.getElementById('tableForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = { max_traffic:parseFloat(document.getElementById('tableMaxTraffic').value), step:parseFloat(document.getElementById('tableStep').value), model:document.getElementById('tableModel').value };
+            const r = await fetch('/api/table_data', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+            const d = await r.json();
+            const h = document.getElementById('tableHeader');
+            h.innerHTML = '<th>Каналы</th>';
+            d.traffic_values.forEach(t => h.innerHTML += `<th>${t} Эрл</th>`);
+            const b = document.getElementById('tableBody');
+            b.innerHTML = '';
+            d.table.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><strong>${row.servers}</strong></td>`;
+                row.values.forEach(val => {
+                    const td = document.createElement('td');
+                    td.textContent = formatNumber(val.gos_percent, 2) + '%';
+                    if (val.gos <= 0.01) td.classList.add('gos-excellent');
+                    else if (val.gos <= 0.05) td.classList.add('gos-acceptable');
+                    else td.classList.add('gos-poor');
+                    tr.appendChild(td);
+                });
+                b.appendChild(tr);
+            });
+            document.getElementById('tableContainer').style.display = 'block';
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (document.getElementById('graph1').classList.contains('active') || document.getElementById('graph1').classList.contains('show')) loadGraph1();
+            }, 200);
+        });
+    </script>
+</body>
+</html>
